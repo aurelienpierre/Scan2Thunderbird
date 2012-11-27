@@ -25,7 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>     #
  
 
-path=`dirname $0`
+path=$(dirname $0)
 cd $path
 
 echo " "
