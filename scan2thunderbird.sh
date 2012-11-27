@@ -61,9 +61,9 @@ do
 	echo " "
 
 	echo "********************************************************************"
-	echo "Do you want color or black & white scan ? "
-	echo "-- C for color"
-	echo "-- B for black & white"
+	echo "Is the source document in color ? "
+	echo "-- type Y for yes then press Enter"
+	echo "-- type N for no then press Enter"
 	read couleur
 	echo " "
 
@@ -78,17 +78,19 @@ do
 
 	while [ "$cmpt" != "$pages" ]
 		do
-			echo "Page $cmpt on $pages in progress :"
+			echo "Page $(($cmpt+1)) on $pages in progress :"
 			case $couleur in
-			[cC]*)						
+			[yYoO]*)						
 				# Scan and convert for color case : high resolution						
 				scanimage -p --resolution=300 --format=tiff > courrier-$cmpt.tiff
 				convert -depth 300 -quality 90 -resize 75% -strip courrier-$cmpt.tiff courrier-$cmpt.jpeg 
+				echo " "
 				echo "File courrier-$cmpt.jpeg written in 300 DPI color at 90% quality.";;
-			[bB]*)
+			[Nn]*)
 				# Scan and convert for B&W case : medium resolution						
 				scanimage -p --resolution=150 --mode=gray --format=tiff > courrier-$cmpt.tiff
 				convert -depth 150 -quality 90 -resize 75% -strip courrier-$cmpt.tiff courrier-$cmpt.jpeg
+				echo " "
 				echo "File courrier-$cmpt.jpeg written in 150 DPI B&W at 90% quality." ;;
 			esac 
 
@@ -123,6 +125,9 @@ do
 	echo " "
 
 	thunderbird -compose "to='',subject='',body='',attachment='file://$path/courrier.pdf.gz'" 
+	echo " "
+	echo "Press Enter when the email is sent"
+	read done
 	echo "Finished."
 
 	echo " "
@@ -130,30 +135,29 @@ do
 	echo "!                         FILE CLEANING                            !"
 	echo "********************************************************************"
 	echo " "
+	echo "Do not interrupt this operation. Please wait 'Finished' message."
 
-	cmpt=0
-
-	while [ "$cmpt" != "$pages" ]
-		do
-			# Removing all generated files for security purpose. Comment the following lines if you want to store a local copy.
-			shred -n 35 -z -u courrier-$cmpt.tiff
-			shred -n 35 -z -u courrier-$cmpt.jpeg
-
-			cmpt=$(($cmpt+1))
-	done
-
+	# Removing all generated files for security purpose. Comment the following lines if you want to store a local copy.
+	shred -n 35 -z -u courrier-*.tiff
+	shred -n 35 -z -u courrier-*.jpeg
 	shred -n 35 -z -u courrier.pdf.gz
+
+
 	echo "All files were deleted with high secured algorithm (35 passes of random bytes)."
 	echo "Finished."
 
 	echo " "
 	echo "********************************************************************"
+	echo "!                          END OF SCAN                             !"
+	echo "********************************************************************"
+	echo " "
+	echo "The programm is now finished."
 	echo " "
 
 	# Tweak for multiple scans
 	echo "Would you like to scan again ?"
-	echo "-- Y for yes"
-	echo "-- N for no"
+	echo "-- type Y for yes then press Enter"
+	echo "-- type N for no then press Enter"
 	
 	read fin
 
