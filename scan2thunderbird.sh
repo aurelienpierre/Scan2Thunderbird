@@ -108,7 +108,7 @@ do
 	echo " "
 
 	# Combine all images (if any) i a single PDF file
-	convert -compress jpeg *.jpeg courrier.pdf
+	convert -compress jpeg courrier-*.jpeg courrier.pdf
 
 	# Compress the PDF to fit mail limitations. Comment the following line if you don't want to compress it.
 	gzip --best courrier.pdf
