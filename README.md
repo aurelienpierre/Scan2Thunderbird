@@ -1,4 +1,2 @@
-scan2email
+Scan2Thunderbird
 ==========
-
-Scan2eMail
