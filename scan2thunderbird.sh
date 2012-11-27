@@ -47,51 +47,28 @@ echo " "
 echo "Please install them if they are missing."
 echo " "
 
-# Running loop
+## functions
 
-run=true
+# Function scan : $res $crop $pages $couleur
+scan() {
+cmpt=0
 
-while $run
-
-do
-
-	echo "Number of pages you want to scan :"
-	read pages
-
-	echo " "
-
-	echo "********************************************************************"
-	echo "Is the source document in color ? "
-	echo "-- type Y for yes then press Enter"
-	echo "-- type N for no then press Enter"
-	read couleur
-	echo " "
-
-	echo " "
-	echo "********************************************************************"
-	echo "!                       SCAN BEGINNING                             !"
-	echo "********************************************************************"
-	echo " "
-
-
-	cmpt=0
-
-	while [ "$cmpt" != "$pages" ]
+	while [ "$cmpt" != "$3" ]
 		do
-			echo "Page $(($cmpt+1)) on $pages in progress :"
-			case $couleur in
+			echo "Page $(($cmpt+1)) on $3 in progress :"
+			case $4 in
 			[yYoO]*)						
-				# Scan and convert for color case : high resolution						
-				scanimage -p --resolution=300 --format=tiff > courrier-$cmpt.tiff
-				convert -depth 300 -quality 90 -resize 75% -strip courrier-$cmpt.tiff courrier-$cmpt.jpeg 
+				# Scan and convert for color case						
+				scanimage -p --resolution=$1 --format=tiff > courrier-$cmpt.tiff
+				convert -page A4 -density $1 -quality 90 -compress jpeg -strip -crop $2courrier-$cmpt.tiff courrier-$cmpt.jpeg 
 				echo " "
-				echo "File courrier-$cmpt.jpeg written in 300 DPI color at 90% quality.";;
+				echo "File courrier-$cmpt.jpeg written in $1 DPI color at 90% quality.";;
 			[Nn]*)
-				# Scan and convert for B&W case : medium resolution						
-				scanimage -p --resolution=150 --mode=gray --format=tiff > courrier-$cmpt.tiff
-				convert -depth 150 -quality 90 -resize 75% -strip courrier-$cmpt.tiff courrier-$cmpt.jpeg
+				# Scan and convert for B&W case						
+				scanimage -p --resolution=$1 --mode=gray --format=tiff > courrier-$cmpt.tiff
+				convert -page A4 -density $1 -quality 90 -compress jpeg -strip -crop $2 courrier-$cmpt.tiff courrier-$cmpt.jpeg 
 				echo " "
-				echo "File courrier-$cmpt.jpeg written in 150 DPI B&W at 90% quality." ;;
+				echo "File courrier-$cmpt.jpeg written in $1 DPI B&W at 90% quality." ;;
 			esac 
 
 			if  [ "$cmpt" != "$(($pages-1))" ]; then
@@ -110,13 +87,80 @@ do
 	echo " "
 
 	# Combine all images (if any) i a single PDF file
-	convert -compress jpeg courrier-*.jpeg courrier.pdf
+	convert -compress jpeg -quality 90 -density $1 *.jpeg courrier.pdf
 
 	# Compress the PDF to fit mail limitations. Comment the following line if you don't want to compress it.
 	gzip --best courrier.pdf
 
 	echo "File courrier.pdf.gz generated with 9 compression factor."
 	echo "Finished."
+}
+
+# Function clean
+
+clean() {
+	echo "Do not interrupt this operation. Please wait 'Finished' message."
+	shred -n 35 -z -u courrier-*.tiff
+	shred -n 35 -z -u courrier-*.jpeg
+	shred -n 35 -z -u courrier.pdf.gz
+}
+
+## Running loop
+
+run=true
+
+while $run
+
+do
+
+	echo "Number of pages you want to scan :"
+	read pages
+
+	# Define resolution and corresponding A4 size in pixels for single multiple pages document - Too heavy files will not be sent by email
+	if [ "$pages" != 1 ]; then
+		res=150
+		crop=1240x1753+0+0
+
+	else
+		res=300
+		crop=2480x3506+0+0
+	fi
+
+	echo " "
+	echo "********************************************************************"
+	echo "Is the source document in color ? "
+	echo "-- type Y for yes then press Enter"
+	echo "-- type N for no then press Enter"
+	read couleur
+	echo " "
+
+	echo " "
+	echo "********************************************************************"
+	echo "!                       SCAN BEGINNING                             !"
+	echo "********************************************************************"
+	echo " "
+
+		scan "$res"  "$crop"  "$pages"  "$couleur" 
+
+	# Check file weight
+	FILESIZE=$(stat -c%s "courrier.pdf.gz")
+
+	if [ "$FILESIZE" -ge 2000000 ] && [ "$pages" = 1 ]; then
+		echo " "
+		echo "/!\ Warning : Generated file weights more than 2 Mo ($FILESIZE bytes). It may not be sent by email"
+		echo " "
+		echo "Would you like to scan it again with another parameters ?"
+		echo "-- type Y for yes then press Enter"
+		echo "-- type N for no then press Enter"
+		read stop
+
+		case $stop in 
+			[yYoO]*) 	
+				clean
+				scan "150"  "1240x1753+0+0"  "$pages"  "$couleur";;
+		esac
+
+	fi
 
 	echo " "
 	echo "********************************************************************"
@@ -124,7 +168,7 @@ do
 	echo "********************************************************************"
 	echo " "
 
-	thunderbird -compose "to='',subject='',body='',attachment='file://$path/courrier.pdf.gz'" 
+	thunderbird -compose "to='',subject='',body='Please note that the attachment is compressed using Gzip and must be uncompressed before reading.',attachment='file://$path/courrier.pdf.gz'" 
 	echo " "
 	echo "Press Enter when the email is sent"
 	read done
@@ -135,12 +179,10 @@ do
 	echo "!                         FILE CLEANING                            !"
 	echo "********************************************************************"
 	echo " "
-	echo "Do not interrupt this operation. Please wait 'Finished' message."
 
-	# Removing all generated files for security purpose. Comment the following lines if you want to store a local copy.
-	shred -n 35 -z -u courrier-*.tiff
-	shred -n 35 -z -u courrier-*.jpeg
-	shred -n 35 -z -u courrier.pdf.gz
+	# Removing all generated files for security purpose. Comment the following line if you want to store a local copy.
+
+		clean
 
 
 	echo "All files were deleted with high secured algorithm (35 passes of random bytes)."
