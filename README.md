@@ -5,7 +5,7 @@ GNU Public License v3
 
 Copyright © 2012 Aurélien PIERRE
 
-http://aurelienpierre.com - aurelien@aurelienpierre.com  
+http://aurelienpierre.com - aurelien[at]aurelienpierre.com  
 _______________________________________________________                                                               
 
 Scan2Thunderbird is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -65,7 +65,7 @@ For multiple pages documents, all images are gathered in the same PDF.
 _______________________________________________________
 Support and suggestions
 =
-Every idea to improve the script is welcome. Send me an email at : aurelien@aurelienpierre.com
+Every idea to improve the script is welcome. Send me an email at : aurelien[at]aurelienpierre.com 
 
 For support and help, go to Github repository, section "Issues" : https://github.com/aurelienpierre/Scan2Thunderbird/issues
 
