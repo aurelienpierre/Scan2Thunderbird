@@ -26,7 +26,6 @@
  
 
 path=$(dirname $0)
-cd $path
 
 echo " "
 echo "********************************************************************"
@@ -49,30 +48,63 @@ echo " "
 
 ## functions
 
-# Function scan : $res $crop $pages $couleur
+# Function convert : $res $crop $pages $couleur $quality $pass
+convertimage() {
+
+	if [ "$6" = 1 ]; then
+	convert -page A4 -density $1 -quality $5 -compress jpeg -strip -crop $2 $path/courrier-$cmpt.tiff $path/courrier-$cmpt.jpeg 
+	else
+	convert -page A4 -density $1 -quality $5 -compress jpeg -strip -resize $2 $path/courrier-$cmpt.tiff $path/courrier-$cmpt.jpeg
+	fi 
+}
+
+# Function merge : $res $crop $pages $couleur $quality
+
+merge() {
+
+	# Combine all images (if any) i a single PDF file
+
+	cmpt=0
+	while [ "$cmpt" != "$3" ]
+		do
+		# Concatenate images list
+		string="$string $path/courrier-$cmpt.jpeg"
+		cmpt=$(($cmpt+1))
+	done
+		convert -compress jpeg -quality $5 -density $1 $string $path/courrier.pdf
+
+	# Compress the PDF to fit mail limitations. Comment the following line if you don't want to compress it.
+	gzip --best $path/courrier.pdf
+
+}
+
+# Function scan : $res $crop $pages $couleur $quality
 scan() {
 cmpt=0
 
 	while [ "$cmpt" != "$3" ]
 		do
-			echo "Page $(($cmpt+1)) on $3 in progress :"
+			echo "Page $(($cmpt+1)) of $3 :"
 			case $4 in
 			[yYoO]*)						
 				# Scan and convert for color case						
-				scanimage -p --resolution=$1 --format=tiff > courrier-$cmpt.tiff
-				convert -page A4 -density $1 -quality 90 -compress jpeg -strip -crop $2courrier-$cmpt.tiff courrier-$cmpt.jpeg 
+				scanimage -p --resolution=$1 --format=tiff > $path/courrier-$cmpt.tiff
+				convertimage "$1" "$2" "$3" "$4" "$5" "1"
 				echo " "
-				echo "File courrier-$cmpt.jpeg written in $1 DPI color at 90% quality.";;
+				echo "++ File courrier-$cmpt.jpeg written in $1 DPI color at $5% quality."
+				echo " ";;
 			[Nn]*)
 				# Scan and convert for B&W case						
-				scanimage -p --resolution=$1 --mode=gray --format=tiff > courrier-$cmpt.tiff
-				convert -page A4 -density $1 -quality 90 -compress jpeg -strip -crop $2 courrier-$cmpt.tiff courrier-$cmpt.jpeg 
+				scanimage -p --resolution=$1 --mode=gray --format=tiff > $path/courrier-$cmpt.tiff
+				convertimage "$1" "$2" "$3" "$4" "$5" "1"
 				echo " "
-				echo "File courrier-$cmpt.jpeg written in $1 DPI B&W at 90% quality." ;;
+				echo "++ File courrier-$cmpt.jpeg written in $1 DPI B&W at $5% quality." 
+				echo " ";;
 			esac 
 
 			if  [ "$cmpt" != "$(($pages-1))" ]; then
 				echo "Switch to the next page and press enter when it's ready..."	
+				echo " "
 				read go
 			fi
 
@@ -87,23 +119,59 @@ cmpt=0
 	echo " "
 
 	# Combine all images (if any) i a single PDF file
-	convert -compress jpeg -quality 90 -density $1 *.jpeg courrier.pdf
 
-	# Compress the PDF to fit mail limitations. Comment the following line if you don't want to compress it.
-	gzip --best courrier.pdf
+	merge "$1" "$2" "$3" "$4" "$5"
 
+	echo " "
 	echo "File courrier.pdf.gz generated with 9 compression factor."
 	echo "Finished."
+	echo " "
 }
+
+# Function scan : $res $crop $pages $couleur $quality
+rescan() {
+cmpt=0
+
+	while [ "$cmpt" != "$3" ]
+		do
+			case $4 in
+			[yYoO]*)						
+				convertimage "$1" "$2" "$3" "$4" "$5" "1" ;;
+			[Nn]*)
+				convertimage "$1" "$2" "$3" "$4" "$5" "1" ;;
+			esac 
+
+			cmpt=$(($cmpt+1))
+	done
+
+	# Combine all images (if any) i a single PDF file
+
+	merge "$1" "$2" "$3" "$4" "$5"
+
+	echo " "
+	echo "File courrier.pdf.gz generated with 9 compression factor."
+	echo "Finished."
+	echo " "
+}
+
 
 # Function clean
 
 clean() {
+	echo " "
 	echo "Do not interrupt this operation. Please wait 'Finished' message."
-	shred -n 35 -z -u courrier-*.tiff
-	shred -n 35 -z -u courrier-*.jpeg
-	shred -n 35 -z -u courrier.pdf.gz
+	echo " "
+	shred -n 35 -z -u $path/courrier-*.tiff
+	shred -n 35 -z -u $path/courrier-*.jpeg
+	shred -n 35 -z -u $path/courrier.pdf.gz
 }
+
+## Global var
+
+# Define resolution, quality and corresponding A4 size in pixels for single page documents
+res=300
+crop=2480x3506+0+0
+quality=90
 
 ## Running loop
 
@@ -113,17 +181,13 @@ while $run
 
 do
 
-	echo "Number of pages you want to scan :"
+	echo -n "Number of pages you want to scan :"
 	read pages
 
-	# Define resolution and corresponding A4 size in pixels for single multiple pages document - Too heavy files will not be sent by email
-	if [ "$pages" != 1 ]; then
+	# Override relotion and A4 size for multiple page documents - Too heavy files will not be sent by email
+	if [ "$pages" -ge 3 ]; then
 		res=150
 		crop=1240x1753+0+0
-
-	else
-		res=300
-		crop=2480x3506+0+0
 	fi
 
 	echo " "
@@ -140,27 +204,33 @@ do
 	echo "********************************************************************"
 	echo " "
 
-		scan "$res"  "$crop"  "$pages"  "$couleur" 
+		scan "$res"  "$crop"  "$pages"  "$couleur" "$quality"
 
 	# Check file weight
-	FILESIZE=$(stat -c%s "courrier.pdf.gz")
+	FILESIZE=$(stat -c%s "$path/courrier.pdf.gz")
 
-	if [ "$FILESIZE" -ge 2000000 ] && [ "$pages" = 1 ]; then
+	while [ "$FILESIZE" -ge 5000000 ]
+		do
 		echo " "
-		echo "/!\ Warning : Generated file weights more than 2 Mo ($FILESIZE bytes). It may not be sent by email"
+		echo "/!\ Warning : Generated file weights more than 5 Mo ($FILESIZE bytes). "
+		echo "In some cases, it may not be sent by email"
 		echo " "
 		echo "Would you like to scan it again with another parameters ?"
 		echo "-- type Y for yes then press Enter"
 		echo "-- type N for no then press Enter"
 		read stop
+		echo " "
 
 		case $stop in 
 			[yYoO]*) 	
-				clean
-				scan "150"  "1240x1753+0+0"  "$pages"  "$couleur";;
+				rescan "150"  "1240x1753+0+0"  "$pages"  "$couleur" "$quality" "2"
+				FILESIZE=$(stat -c%s "$path/courrier.pdf.gz")
+				quality=$(($quality-5)) ;;
+			[nN]*)
+				break ;;
 		esac
 
-	fi
+	done
 
 	echo " "
 	echo "********************************************************************"
@@ -173,6 +243,7 @@ do
 	echo "Press Enter when the email is sent"
 	read done
 	echo "Finished."
+	echo " "
 
 	echo " "
 	echo "********************************************************************"
@@ -187,6 +258,7 @@ do
 
 	echo "All files were deleted with high secured algorithm (35 passes of random bytes)."
 	echo "Finished."
+	echo " "
 
 	echo " "
 	echo "********************************************************************"
@@ -202,9 +274,16 @@ do
 	echo "-- type N for no then press Enter"
 	
 	read fin
+	echo " "
 
 	case $fin in 
-	[nN]*) run=false ;;
+	[yYoO]*) 
+		unset string 
+		res=300
+		crop=2480x3506+0+0
+		quality=90 ;;
+	[nN]*) 
+		run=false ;;
 	esac
 done
 exit 0
