@@ -295,10 +295,9 @@ quit "$?"
 	thunderbird -compose "to='',subject='',body='$txt9',attachment='file:///tmp/$name.pdf.gz'"
 	wait $!
 
-	while [ ps -p $! ]
-		do
-			sleep 500
-	done
+	if [ ps -p $! ]; then
+		sleep 500
+	fi
 
 
 	delete=`zenity --question --text="$txt24 $name.pdf ?"`

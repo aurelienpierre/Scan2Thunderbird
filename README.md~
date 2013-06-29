@@ -10,23 +10,25 @@ _______________________________________________________
 
 Scan2Thunderbird is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
                                                                          
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/> 
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.                                                                                                      You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/> 
 _______________________________________________________
 Plateform : GNU/Linux
-Tested on : Ubuntu 12.04 - Ubuntu 13.04
+Tested on : Ubuntu 12.04
 
-To run, this script needs this packages : sane (command scanimage), imagemagick (command convert), gzip, thunderbird, evince & coreutils (command shred).
+To run, this script needs this packages : sane, imagemagick, gzip, thunderbird & shred
 
 _______________________________________________________
 
 Aim of the script
 =
 This program is designed for people who have to scan single ou multiple pages files in order to send them by email. 
-It is usefull for those who don't care about several options and complicated settings. It is simple, fast and efficient.
+It is usefull for those who don't care about several options and complicated settings. It is simple and efficient.
+
+I designed it to help my grand-father to scan my administrative documents and to send me them by email, while I am not at home during long time.
 
 _______________________________________________________
 
-Running the script (Through source-code)
+Running the script
 =
 In a shell, type :
 
@@ -38,22 +40,18 @@ That's it !
 
 You can optionnaly make a launcher with gnome-menu, for example. In this case, don't forget to check "Shell application" option.
 
-Running the script (Through .deb package)
-=
-Juste launch the Scan2Thunderbird shortcut in your dash/panel/menu.
 _______________________________________________________
 
 Options
 =
 At the beginning of the script, you can choose :
 
-- the name of the file
 - the number of pages to scan,
 - color or black & white outpout.
 
 All the rest is automatic.
 
-At the end, you can save a copy of the generated PDF file in your Home.
+You can run several times the programm in the same instance.
 
 _______________________________________________________
 Outpout
@@ -64,7 +62,7 @@ For multiple pages documents, all images are gathered in the same PDF.
 
 The images are encoded in JPEG, 300 DPI resolution and compressed at 90% quality by default.
 
-If the compressed PDF file weights more than 5 Mo (common mail privider restriction), the script asks you if you want to compress it again : the first recompression converts images to 150 DPI resolution, the next recompressions decreases quality of 1 % each time.
+If the compressed PDF file weights more than 5 Mo (common mail privider restriction), the script asks you if you want to compress it again : the first recompression converts images to 150 DPI resolution, the next recompressions decreases quality of 5 % each time.
 
 You can recompress outpout PDF much as it is necessary.
 
