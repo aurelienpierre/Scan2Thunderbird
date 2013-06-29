@@ -43,10 +43,11 @@ fi
 # Function convert : $resolution $crop $pages $color $quality $pass
 convertimage() {
 
-	if [ "$6" = 1 ]; then
+	if [ "$6" -eq "1" ]; then
+	convert -page A4 -crop $2 /tmp/$name-$cmpt.tiff  /tmp/$name-$cmpt.tiff 
 	convert -page A4 -density $1 -quality $5 -compress jpeg -strip -crop $2 /tmp/$name-$cmpt.tiff /tmp/$name-$cmpt.jpeg 
 	else
-	convert -page A4 -density $1 -quality $5 -compress jpeg -strip -resize $2 /tmp/$namer-$cmpt.tiff /tmp/$name-$cmpt.jpeg
+	convert -page A4 -density $1 -quality $5 -compress jpeg -strip -resize $2 /tmp/$name-$cmpt.tiff /tmp/$name-$cmpt.jpeg
 	fi 
 }
 
@@ -124,19 +125,13 @@ scan() {
 	echo "$txt14" ; sleep 1
 }
 
-# Function scan : $resolution $crop $pages $couleur $quality
+# Function rescan : $resolution $crop $pages $couleur $quality
 rescan() {
 	cmpt=0
 
 	while [ "$cmpt" != "$3" ]
 		do
-			case $4 in
-			[Yes]*)						
-				convertimage "$1" "$2" "$3" "$4" "$5" "1" ;;
-			[No]*)
-				convertimage "$1" "$2" "$3" "$4" "$5" "1" ;;
-			esac 
-
+			convertimage "$1" "$2" "$3" "$4" "$5" "2"
 			cmpt=$(($cmpt+1))
 	done
 
@@ -156,6 +151,7 @@ clean() {
 quit() {
 	if [ "$1" = 1  ]; then
 		break
+		clean
 		exit 1
 	fi
 }
@@ -243,7 +239,7 @@ quit "$?"
 	quit "$?"
 
 	(
-		# Scan after determining which proportion are best according to the number of pages & Merge
+		# Scan after determining which proportion are best according to the number of pages
 			
 			if [ "$pages" -ge "4" ]; then
 				scan "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$quality"
@@ -282,7 +278,7 @@ quit "$?"
 
 			unset string
 
-			rescan "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$qual" "2"
+			rescan "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$qual"
 			merge "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$qual"
 
 			cp /tmp/$name.pdf /tmp/$name-2.pdf
@@ -296,9 +292,14 @@ quit "$?"
 	# Preview and send
 
 	evince /tmp/$name-2.pdf &
- 	thunderbird -compose "to='',subject='',body='$txt9',attachment='file:///tmp/$name.pdf.gz'"
+	thunderbird -compose "to='',subject='',body='$txt9',attachment='file:///tmp/$name.pdf.gz'"
+	wait $!
 
-	wait
+	while [ ps -p $! ]
+		do
+			sleep 500
+	done
+
 
 	delete=`zenity --question --text="$txt24 $name.pdf ?"`
 
