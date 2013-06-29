@@ -276,7 +276,7 @@ quit "$?"
 	while [ "$FILESIZE" -ge "$attachment_limit" ]
 		do	
 
-			zenity --info --text="$txt27 $qual % - $min_resolution DPI/PPP" 
+			zenity --info --text="$txt27 $qual % - $min_resolution DPI" 
 
 			quit "$?"
 
