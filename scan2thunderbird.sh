@@ -142,7 +142,6 @@ rescan() {
 clean() {
 	shred -n 35 -z -u /tmp/$name-*.tiff
 	shred -n 35 -z -u /tmp/$name-*.jpeg
-	shred -n 35 -z -u /tmp/$name.pdf.gz
 	shred -n 35 -z -u /tmp/$name*.pdf
 }
 
@@ -258,14 +257,9 @@ quit "$?"
 						--auto-close
 		quit "$?"
 
-	# Compress the PDF file
-
-	cp /tmp/$name.pdf /tmp/$name-2.pdf
-	gzip --best -f /tmp/$name.pdf
-
 	# Check file weight
 
-	FILESIZE=$(stat -c%s "/tmp/$name.pdf.gz")
+	FILESIZE=$(stat -c%s "/tmp/$name.pdf")
 
 	qual=$quality
 
@@ -281,10 +275,7 @@ quit "$?"
 			rescan "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$qual"
 			merge "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$qual"
 
-			cp /tmp/$name.pdf /tmp/$name-2.pdf
-			gzip --best -f /tmp/$name.pdf
-
-			FILESIZE=$(stat -c%s "/tmp/$name.pdf.gz")
+			FILESIZE=$(stat -c%s "/tmp/$name.pdf")
 
 			qual=$(($qual-1))
 	done
@@ -292,7 +283,7 @@ quit "$?"
 	# Preview and send
 
 	evince /tmp/$name-2.pdf &
-	thunderbird -compose "to='',subject='',body='$txt9',attachment='file:///tmp/$name.pdf.gz'"
+	thunderbird -compose "to='',subject='',body='',attachment='file:///tmp/$name.pdf'"
 	wait $!
 
 	while [ ps -p $! ]
@@ -307,7 +298,6 @@ quit "$?"
 
 	if [ "$?" -eq "0" ]; then
 			file=`zenity --file-selection --save  --filename=/$HOME/$USER/  --title="$txt25 ?"`
-			cp /tmp/$name-2.pdf /$file.pdf
 			clean
 		else
 			clean
