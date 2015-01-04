@@ -1,22 +1,22 @@
 #!/bin/bash
-#                                     Scan2Thunderbird GUI                           #
-#                                          v0.2                                                   #
-#                                                                                                    #
+#                           Scan2Thunderbird GUI                           #
+#                                   v1.0                                   #
+#                                                                          #
 #                 To run, this script needs this packages :                #
 #	    sane, imagemagick, gzip, thunderbird, zenity & shred           #
 #                                                                          #
 #                          GNU Public License v3                           #
 #                                                                          #
 #                     Copyright © 2012 Aurélien PIERRE                     #
-#         https://aurelienpierre.com - aurelien@aurelienpierre.com          #
+#         https://aurelienpierre.com - aurelien@aurelienpierre.com         #
 #                                                                          #
 #                                                                          #
 # Scan2Thunderbird is free software: you can redistribute it and/or modify #
-#    it under the terms of the GNU General Public License as published by     #
-#        the Free Software Foundation, either version 3 of the License, or          #
-#                               (at your option) any later version.                                      #
-#                                                                                                                               #
-#           This program is distributed in the hope that it will be useful,            #
+#    it under the terms of the GNU General Public License as published by  #
+#        the Free Software Foundation, either version 3 of the License, or #
+#                               (at your option) any later version.        #
+#                                                                          #
+#           This program is distributed in the hope that it will be useful,#
 # but WITHOUT ANY WARRANTY; without even the implied warranty of           #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            #
 # GNU General Public License for more details.                             #
@@ -142,7 +142,6 @@ rescan() {
 clean() {
 	shred -n 35 -z -u /tmp/$name-*.tiff
 	shred -n 35 -z -u /tmp/$name-*.jpeg
-	shred -n 35 -z -u /tmp/$name.pdf.gz
 	shred -n 35 -z -u /tmp/$name*.pdf
 }
 
@@ -258,14 +257,9 @@ quit "$?"
 						--auto-close
 		quit "$?"
 
-	# Compress the PDF file
-
-	cp /tmp/$name.pdf /tmp/$name-2.pdf
-	gzip --best -f /tmp/$name.pdf
-
 	# Check file weight
 
-	FILESIZE=$(stat -c%s "/tmp/$name.pdf.gz")
+	FILESIZE=$(stat -c%s "/tmp/$name.pdf")
 
 	qual=$quality
 
@@ -281,23 +275,21 @@ quit "$?"
 			rescan "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$qual"
 			merge "$min_resolution"  "$min_crop"  "$pages"  "$couleur" "$qual"
 
-			cp /tmp/$name.pdf /tmp/$name-2.pdf
-			gzip --best -f /tmp/$name.pdf
-
-			FILESIZE=$(stat -c%s "/tmp/$name.pdf.gz")
+			FILESIZE=$(stat -c%s "/tmp/$name.pdf")
 
 			qual=$(($qual-1))
 	done
 
 	# Preview and send
 
-	evince /tmp/$name-2.pdf &
-	thunderbird -compose "to='',subject='',body='$txt9',attachment='file:///tmp/$name.pdf.gz'"
+	evince /tmp/$name.pdf &
+	thunderbird -compose "to='',subject='',body='',attachment='file:///tmp/$name.pdf'"
 	wait $!
 
-	if [ ps -p $! ]; then
-		sleep 500
-	fi
+	while [ ps -p $! ]
+		do
+			sleep 500
+	done
 
 
 	delete=`zenity --question --text="$txt24 $name.pdf ?"`
@@ -306,7 +298,6 @@ quit "$?"
 
 	if [ "$?" -eq "0" ]; then
 			file=`zenity --file-selection --save  --filename=/$HOME/$USER/  --title="$txt25 ?"`
-			cp /tmp/$name-2.pdf /$file.pdf
 			clean
 		else
 			clean
